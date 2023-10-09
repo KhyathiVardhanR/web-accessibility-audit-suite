@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Professional Web Accessibility Audit Suite — WCAG 2.1 checker, color contrast calculator, heading visualizer, and report exporter."/>
+<title>Accessibility Audit Suite | WCAG 2.1</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --blue:#0021A5;--orange:#FA4616;--white:#fff;
+  --bg:#f4f7fb;--card:#fff;--text:#1a1a1a;--muted:#5a6272;
+  --border:#dde4f0;--focus:#ffbf00;--radius:10px;
+  --pass:#1a7f37;--pass-bg:#e6f4ea;
+  --warn:#9a6700;--warn-bg:#fff8e1;
+  --fail:#c0392b;--fail-bg:#fdecea;
+  --info:#0550ae;--info-bg:#dbeafe;
+  --code-bg:#1e1e2e;--code-fg:#cdd6f4;
+}
+[data-theme="dark"]{
+  --bg:#0f1117;--card:#1a1d2e;--text:#e8eaf6;--muted:#9aa3b8;
+  --border:#2a2f45;--code-bg:#0d0d1a;
+}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.65;transition:background .3s,color .3s;}
+.skip{position:absolute;top:-50px;left:0;background:var(--focus);color:#000;padding:10px 18px;font-weight:700;text-decoration:none;z-index:9999;}
+.skip:focus{top:0;}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--blue),#0041cc);color:#fff;padding:0 24px;}
+.hdr-inner{max-width:1200px;margin:0 auto;padding:20px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-icon{width:50px;height:50px;background:var(--orange);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;}
+.logo-text h1{font-size:1.3rem;}
+.logo-text p{font-size:.78rem;opacity:.8;margin-top:2px;}
+.hdr-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:5px 12px;border-radius:16px;font-size:.75rem;font-weight:700;}
+.dark-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;transition:background .2s;}
+.dark-btn:hover,.dark-btn:focus{background:rgba(255,255,255,.25);outline:2px solid var(--focus);}
+
+/* TOOL TABS */
+.tool-tabs{background:var(--card);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.tool-tabs-inner{max-width:1200px;margin:0 auto;display:flex;padding:0 24px;overflow-x:auto;}
+.tool-tab{background:none;border:none;padding:14px 20px;cursor:pointer;font-size:.88rem;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap;transition:color .2s,border-color .2s;margin-bottom:-2px;}
+.tool-tab:hover,.tool-tab:focus{color:var(--blue);outline:2px solid var(--focus);}
+.tool-tab.active{color:var(--blue);border-bottom-color:var(--orange);}
+.tool-panel{display:none;max-width:1200px;margin:0 auto;padding:28px 24px;animation:fi .3s;}
+.tool-panel.active{display:block;}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 2px 10px rgba(0,33,165,.06);margin-bottom:20px;}
+.card h2{font-size:1.05rem;color:var(--blue);margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--orange);}
+.card h3{font-size:.95rem;color:var(--blue);margin-bottom:10px;}
+
+/* INTRO BADGES */
+.intro-badges{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;}
+.ib{background:#eef1f9;color:var(--blue);padding:5px 12px;border-radius:14px;font-size:.78rem;font-weight:600;border:1px solid var(--border);}
+
+/* FORM CONTROLS */
+label{font-size:.85rem;font-weight:600;display:block;margin-bottom:5px;}
+textarea,input[type=text],input[type=color],select{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:7px;font-size:.88rem;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .2s;}
+textarea:focus,input:focus,select:focus{outline:3px solid var(--blue);outline-offset:1px;border-color:var(--blue);}
+textarea{resize:vertical;font-family:'Courier New',monospace;}
+.form-row{margin-bottom:14px;}
+
+/* BUTTONS */
+.btn{padding:10px 22px;border-radius:7px;font-size:.9rem;font-weight:700;cursor:pointer;border:none;transition:opacity .2s,transform .2s;display:inline-flex;align-items:center;gap:7px;}
+.btn:hover{opacity:.88;transform:translateY(-1px);}
+.btn:focus{outline:3px solid var(--focus);outline-offset:3px;}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-orange{background:var(--orange);color:#fff;}
+.btn-outline{background:transparent;border:2px solid var(--blue);color:var(--blue);}
+.btn-sm{padding:6px 14px;font-size:.8rem;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px;}
+
+/* SCORE */
+.score-wrap{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center;margin-bottom:20px;}
+.score-ring{width:110px;height:110px;border-radius:50%;border:8px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.score-ring .sn{font-size:2rem;font-weight:800;line-height:1;}
+.score-ring .sl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7;}
+.score-bars-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.sb{text-align:center;padding:12px 8px;border-radius:8px;border:1px solid var(--border);}
+.sb .sbn{font-size:1.5rem;font-weight:800;display:block;}
+.sb .sbl{font-size:.72rem;color:var(--muted);margin-top:3px;}
+.fail-sb{background:var(--fail-bg);border-color:#fca5a5;}.fail-sb .sbn{color:var(--fail);}
+.warn-sb{background:var(--warn-bg);border-color:#fcd34d;}.warn-sb .sbn{color:var(--warn);}
+.pass-sb{background:var(--pass-bg);border-color:#a3d9a5;}.pass-sb .sbn{color:var(--pass);}
+.info-sb{background:var(--info-bg);border-color:#93c5fd;}.info-sb .sbn{color:var(--info);}
+.prog-wrap{margin-bottom:8px;}
+.prog-label{display:flex;justify-content:space-between;font-size:.78rem;margin-bottom:4px;color:var(--muted);}
+.prog-track{height:8px;background:#e9ecf3;border-radius:10px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:10px;transition:width .8s ease;}
+
+/* FILTER PILLS */
+.pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;}
+.pill{background:#eef1f9;border:1px solid var(--border);color:var(--blue);padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.8rem;font-weight:600;transition:background .2s;}
+.pill.active,.pill:hover{background:var(--blue);color:#fff;border-color:var(--blue);}
+.pill:focus{outline:3px solid var(--focus);}
+
+/* ISSUE CARDS */
+.issue-list{display:flex;flex-direction:column;gap:12px;}
+.issue{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;}
+.issue-hdr{display:flex;align-items:center;gap:10px;padding:13px 18px;cursor:pointer;user-select:none;}
+.issue-hdr:focus{outline:3px solid var(--focus);outline-offset:-3px;}
+.sev{width:76px;text-align:center;padding:3px 8px;border-radius:14px;font-size:.7rem;font-weight:700;text-transform:uppercase;flex-shrink:0;}
+.sev-fail{background:var(--fail-bg);color:var(--fail);}
+.sev-warn{background:var(--warn-bg);color:var(--warn);}
+.sev-pass{background:var(--pass-bg);color:var(--pass);}
+.sev-info{background:var(--info-bg);color:var(--info);}
+.issue-title{font-weight:600;font-size:.93rem;flex:1;}
+.crit-tag{font-size:.72rem;background:#eef1f9;color:var(--blue);padding:2px 8px;border-radius:10px;font-weight:600;margin-left:auto;white-space:nowrap;}
+.exp-icon{color:var(--muted);margin-left:7px;font-size:.85rem;}
+.issue-body{padding:0 18px 16px;border-top:1px solid var(--border);background:var(--bg);display:none;}
+.issue-body.open{display:block;}
+.issue-desc{color:var(--muted);font-size:.88rem;margin:12px 0 10px;}
+.fix-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 15px;margin-bottom:10px;}
+.fix-box strong{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:var(--blue);margin-bottom:5px;}
+.fix-box p{font-size:.85rem;}
+.code-block{background:var(--code-bg);color:var(--code-fg);border-radius:8px;padding:13px 15px;font-family:'Courier New',monospace;font-size:.8rem;overflow-x:auto;margin-bottom:10px;white-space:pre;}
+.ref-link{font-size:.8rem;color:var(--blue);text-decoration:underline;}
+
+/* COLOR CONTRAST */
+.contrast-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.preview-box{border-radius:var(--radius);border:2px solid var(--border);padding:28px;text-align:center;transition:background .2s;}
+.preview-text{font-size:1.1rem;font-weight:600;margin-bottom:8px;}
+.preview-small{font-size:.85rem;}
+.ratio-display{font-size:2.5rem;font-weight:800;color:var(--blue);text-align:center;margin:12px 0;}
+.ratio-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.ratio-check{padding:10px 14px;border-radius:8px;border:1px solid var(--border);text-align:center;}
+.rc-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px;}
+.rc-result{font-size:.9rem;font-weight:700;}
+.pass-check{background:var(--pass-bg);border-color:#a3d9a5;}.pass-check .rc-result{color:var(--pass);}
+.fail-check{background:var(--fail-bg);border-color:#fca5a5;}.fail-check .rc-result{color:var(--fail);}
+.color-row{display:flex;gap:12px;align-items:flex-end;margin-bottom:14px;}
+.color-inp-wrap{flex:1;}
+.color-swatch{width:44px;height:44px;border-radius:8px;border:1px solid var(--border);cursor:pointer;}
+input[type=color]{padding:3px;height:44px;cursor:pointer;}
+
+/* HEADING TREE */
+.htree{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.h-node{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;border-left:4px solid;font-size:.88rem;}
+.h1-node{border-color:#0021A5;background:#eef1f9;margin-left:0;}
+.h2-node{border-color:#FA4616;background:#fff3ee;margin-left:20px;}
+.h3-node{border-color:#1a7f37;background:#e6f4ea;margin-left:40px;}
+.h4-node{border-color:#9a6700;background:#fff8e1;margin-left:60px;}
+.h5-node,.h6-node{border-color:#9aa3b8;background:#f4f7fb;margin-left:80px;}
+.h-level{font-size:.72rem;font-weight:800;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.08);color:inherit;flex-shrink:0;}
+.h-skip{border-color:var(--fail)!important;background:var(--fail-bg)!important;}
+.h-skip-warn{font-size:.72rem;color:var(--fail);font-weight:600;margin-left:auto;}
+
+/* HISTORY */
+.hist-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+.hist-score{width:44px;height:44px;border-radius:50%;border:3px solid;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;flex-shrink:0;}
+.hist-info{flex:1;}
+.hist-title{font-size:.88rem;font-weight:600;}
+.hist-date{font-size:.75rem;color:var(--muted);}
+.hist-counts{font-size:.75rem;margin-top:3px;}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--pass);color:#fff;padding:11px 18px;border-radius:8px;font-size:.85rem;font-weight:600;z-index:3000;box-shadow:0 4px 16px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:transform .3s,opacity .3s;}
+.notif.show{transform:translateY(0);opacity:1;}
+
+@media(max-width:700px){
+  .contrast-layout{grid-template-columns:1fr;}
+  .score-wrap{grid-template-columns:1fr;}
+  .score-ring{margin:0 auto;}
+  .score-bars-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<a href="#main" class="skip">Skip to main content</a>
+
+<header role="banner">
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="logo-icon" role="img" aria-label="Logo">♿</div>
+      <div class="logo-text">
+        <h1>Web Accessibility Audit Suite</h1>
+        <p>Professional WCAG 2.1 analysis, contrast checking, and report export</p>
+      </div>
+    </div>
+    <div class="hdr-badges">
+      <span class="badge">WCAG 2.1 AA</span>
+      <span class="badge">20+ Checks</span>
+      <button class="dark-btn" onclick="toggleDark()" id="dark-btn" aria-label="Toggle dark mode">🌙 Dark</button>
+    </div>
+  </div>
+</header>
+
+<!-- TOOL TABS -->
+<div class="tool-tabs" role="navigation" aria-label="Tool navigation">
+  <div class="tool-tabs-inner">
+    <button class="tool-tab active" onclick="showTool(this,'checker')" role="tab" aria-selected="true">🔍 WCAG Checker</button>
+    <button class="tool-tab" onclick="showTool(this,'contrast')" role="tab" aria-selected="false">🎨 Color Contrast</button>
+    <button class="tool-tab" onclick="showTool(this,'headings')" role="tab" aria-selected="false">📋 Heading Structure</button>
+    <button class="tool-tab" onclick="showTool(this,'history')" role="tab" aria-selected="false">📊 Audit History</button>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- CHECKER TOOL -->
+<div class="tool-panel active" id="tool-checker">
+  <div class="card">
+    <h2>About This Tool</h2>
+    <p style="color:var(--muted);font-size:.88rem;">Paste any HTML below to receive an instant WCAG 2.1 Level AA compliance audit. This tool checks 20+ accessibility criteria and provides detailed remediation guidance for each issue.</p>
+    <div class="intro-badges">
+      <span class="ib">🖼 Alt Text (1.1.1)</span><span class="ib">📋 Headings (1.3.1)</span>
+      <span class="ib">🎨 Color Contrast (1.4.3)</span><span class="ib">🏷 ARIA Labels (4.1.2)</span>
+      <span class="ib">🔗 Link Text (2.4.4)</span><span class="ib">📝 Form Labels (1.3.1)</span>
+      <span class="ib">⌨ Keyboard (2.1.1)</span><span class="ib">🌐 Language (3.1.1)</span>
+      <span class="ib">📄 Page Title (2.4.2)</span><span class="ib">📱 Viewport (1.4.4)</span>
+      <span class="ib">🚦 Focus Indicators (2.4.7)</span><span class="ib">📢 Live Regions (4.1.3)</span>
+      <span class="ib">🖱 Click Targets (2.5.5)</span><span class="ib">📊 Tables (1.3.1)</span>
+      <span class="ib">🔲 iFrames (4.1.2)</span><span class="ib">🔄 Auto-play (1.4.2)</span>
+      <span class="ib">✏️ Placeholder Labels (1.3.1)</span><span class="ib">🔃 Reflow (1.4.10)</span>
+      <span class="ib">🗒 Error Messages (3.3.1)</span><span class="ib">⏭ Skip Links (2.4.1)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="form-row">
+      <label for="html-in">Paste your HTML code:</label>
+      <textarea id="html-in" rows="10" aria-describedby="html-hint" placeholder="Paste full HTML page or snippet here…&#10;&#10;Try the 'Load Sample' button to see the checker in action!"></textarea>
+      <p id="html-hint" style="font-size:.76rem;color:var(--muted);margin-top:5px;">Tip: Paste a full HTML page including &lt;html&gt;, &lt;head&gt;, and &lt;body&gt; for the most accurate results.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runChecks()">🔍 Run Audit</button>
+      <button class="btn btn-outline" onclick="loadSample()">Load Sample HTML</button>
+      <button class="btn btn-outline" onclick="document.getElementById('html-in').value='';hideResults()">Clear</button>
+    </div>
+  </div>
+
+  <!-- SCORE -->
+  <div class="card" id="score-card" style="display:none;" aria-live="polite">
+    <h2>Accessibility Score</h2>
+    <div class="score-wrap">
+      <div class="score-ring" id="score-ring">
+        <span class="sn" id="score-num">0</span>
+        <span class="sl">/ 100</span>
+      </div>
+      <div>
+        <div class="score-bars-grid">
+          <div class="sb fail-sb"><span class="sbn" id="cnt-fail">0</span><div class="sbl">Errors</div></div>
+          <div class="sb warn-sb"><span class="sbn" id="cnt-warn">0</span><div class="sbl">Warnings</div></div>
+          <div class="sb pass-sb"><span class="sbn" id="cnt-pass">0</span><div class="sbl">Passed</div></div>
+          <div class="sb info-sb"><span class="sbn" id="cnt-info">0</span><div class="sbl">Info</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="prog-wrap"><div class="prog-label"><span>Errors</span><span id="pct-fail">0%</span></div><div class="prog-track"><div class="prog-fill" id="bar-fail" style="background:var(--fail);width:0%"></div></div></div>
+    <div class="prog-wrap" style="margin-top:8px;"><div class="prog-label"><span>Warnings</span><span id="pct-warn">0%</span></div><div class="prog-track"><div class="prog-fill" id="bar-warn" style="background:var(--warn);width:0%"></div></div></div>
+    <div class="prog-wrap" style="margin-top:8px;"><div class="prog-label"><span>Passed</span><span id="pct-pass">0%</span></div><div class="prog-track"><div class="prog-fill" id="bar-pass" style="background:var(--pass);width:0%"></div></div></div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-outline btn-sm" onclick="exportReport()">📥 Export Report (HTML)</button>
+      <button class="btn btn-outline btn-sm" onclick="showTool(document.querySelectorAll('.tool-tab')[2],'headings');analyzeHeadings();">📋 View Heading Tree</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-wrap" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <h2 style="font-size:1.1rem;color:var(--blue);">Detailed Results</h2>
+      <div class="pills" role="group" aria-label="Filter results">
+        <button class="pill active" onclick="filterIssues(this,'all')" aria-pressed="true">All</button>
+        <button class="pill" onclick="filterIssues(this,'fail')" aria-pressed="false">Errors</button>
+        <button class="pill" onclick="filterIssues(this,'warn')" aria-pressed="false">Warnings</button>
+        <button class="pill" onclick="filterIssues(this,'pass')" aria-pressed="false">Passed</button>
+        <button class="pill" onclick="filterIssues(this,'info')" aria-pressed="false">Info</button>
+      </div>
+    </div>
+    <div class="issue-list" id="issue-list" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- COLOR CONTRAST -->
+<div class="tool-panel" id="tool-contrast">
+  <div class="card">
+    <h2>Color Contrast Calculator</h2>
+    <p style="color:var(--muted);font-size:.87rem;margin-bottom:20px;">WCAG 2.1 requires a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text (18pt+ or 14pt bold). Enter your foreground and background colors to check compliance.</p>
+    <div class="contrast-layout">
+      <div>
+        <div class="color-row">
+          <div class="color-inp-wrap">
+            <label for="fg-hex">Foreground Color (Text)</label>
+            <input type="text" id="fg-hex" value="#000000" placeholder="#000000" oninput="syncColor('fg')"/>
+          </div>
+          <input type="color" id="fg-color" value="#000000" onchange="syncFromPicker('fg')" aria-label="Foreground color picker" class="color-swatch" style="width:44px;padding:2px;"/>
+        </div>
+        <div class="color-row">
+          <div class="color-inp-wrap">
+            <label for="bg-hex">Background Color</label>
+            <input type="text" id="bg-hex" value="#ffffff" placeholder="#ffffff" oninput="syncColor('bg')"/>
+          </div>
+          <input type="color" id="bg-color" value="#ffffff" onchange="syncFromPicker('bg')" aria-label="Background color picker" class="color-swatch" style="width:44px;padding:2px;"/>
+        </div>
+        <div class="form-row">
+          <label for="preview-text-in">Preview Text</label>
+          <input type="text" id="preview-text-in" value="The quick brown fox jumps over the lazy dog" oninput="updatePreview()"/>
+        </div>
+        <div class="form-row">
+          <label for="font-size-in">Font Size (px)</label>
+          <select id="font-size-in" onchange="updatePreview()">
+            <option value="14">14px — Normal text</option>
+            <option value="16" selected>16px — Normal text</option>
+            <option value="18">18px — Large text threshold</option>
+            <option value="24">24px — Large text</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="calcContrast()" style="width:100%;justify-content:center;">Calculate Contrast Ratio</button>
+        <div style="margin-top:14px;">
+          <div class="ratio-display" id="ratio-display">—</div>
+          <div class="ratio-grid">
+            <div class="ratio-check" id="aa-normal"><div class="rc-label">AA Normal Text</div><div class="rc-result" id="aa-n-res">—</div><div style="font-size:.72rem;color:var(--muted)">Min 4.5:1</div></div>
+            <div class="ratio-check" id="aa-large"><div class="rc-label">AA Large Text</div><div class="rc-result" id="aa-l-res">—</div><div style="font-size:.72rem;color:var(--muted)">Min 3:1</div></div>
+            <div class="ratio-check" id="aaa-normal"><div class="rc-label">AAA Normal</div><div class="rc-result" id="aaa-n-res">—</div><div style="font-size:.72rem;color:var(--muted)">Min 7:1</div></div>
+            <div class="ratio-check" id="aaa-large"><div class="rc-label">AAA Large</div><div class="rc-result" id="aaa-l-res">—</div><div style="font-size:.72rem;color:var(--muted)">Min 4.5:1</div></div>
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <h3 style="font-size:.88rem;color:var(--blue);margin-bottom:8px;">Quick Palette — Accessible Combinations</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;" id="palette"></div>
+        </div>
+      </div>
+      <div>
+        <div class="preview-box" id="preview-box" style="background:#fff;margin-bottom:14px;">
+          <p class="preview-text" id="preview-normal" style="color:#000;">The quick brown fox jumps over the lazy dog</p>
+          <p class="preview-small" id="preview-small" style="color:#000;font-size:.85rem;">Small text: The quick brown fox jumps over the lazy dog</p>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <h3>Color Details</h3>
+          <div id="color-details" style="font-size:.85rem;color:var(--muted);display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+            <div>Foreground: <span id="fg-detail">—</span></div>
+            <div>Background: <span id="bg-detail">—</span></div>
+            <div>Luminance ratio: <span id="lum-detail">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEADING STRUCTURE -->
+<div class="tool-panel" id="tool-headings">
+  <div class="card">
+    <h2>Heading Structure Visualizer</h2>
+    <p style="color:var(--muted);font-size:.87rem;margin-bottom:16px;">WCAG 2.4.6 and 1.3.1 require headings to be meaningful and hierarchically ordered. This tool visualizes your heading structure and highlights issues like skipped levels or missing H1.</p>
+    <div class="form-row">
+      <label for="heading-html">Paste HTML to analyze:</label>
+      <textarea id="heading-html" rows="8" placeholder="Paste HTML here to visualize the heading structure…"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="analyzeHeadings()">📋 Analyze Headings</button>
+      <button class="btn btn-outline" onclick="loadHeadingSample()">Load Sample</button>
+    </div>
+  </div>
+  <div class="card" id="heading-results" style="display:none;">
+    <h2>Heading Tree</h2>
+    <div id="heading-summary" style="margin-bottom:14px;font-size:.88rem;color:var(--muted);"></div>
+    <div class="htree" id="htree" aria-label="Heading structure visualization"></div>
+  </div>
+  <div class="card" id="heading-tips" style="display:none;">
+    <h2>Heading Best Practices</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:4px;">
+      <div class="fix-box"><strong>✅ One H1 Per Page</strong><p>Use exactly one H1 for the main page title. Multiple H1s confuse screen readers.</p></div>
+      <div class="fix-box"><strong>✅ Don't Skip Levels</strong><p>Go from H2 to H3, not H2 to H4. Skipped levels break the document outline.</p></div>
+      <div class="fix-box"><strong>✅ Descriptive Text</strong><p>Headings should describe the section content. Avoid generic "Section 1" headings.</p></div>
+      <div class="fix-box"><strong>✅ Not Just for Styling</strong><p>Use headings for structure, not size. Use CSS for visual styling instead.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="tool-panel" id="tool-history">
+  <div class="card">
+    <h2>Audit History</h2>
+    <p style="color:var(--muted);font-size:.87rem;margin-bottom:16px;">Your last 10 audits are saved locally in your browser. Use this to track accessibility improvements over time.</p>
+    <div id="hist-list" aria-live="polite"></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-outline btn-sm" onclick="clearHistory()">🗑 Clear History</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer role="contentinfo" style="background:var(--blue);color:rgba(255,255,255,.75);text-align:center;padding:18px 24px;margin-top:32px;font-size:.82rem;">
+  <p>Web Accessibility Audit Suite &nbsp;|&nbsp; Built with HTML, CSS &amp; JavaScript &nbsp;|&nbsp;
+  <a href="https://www.w3.org/WAI/WCAG21/quickref/" target="_blank" rel="noopener" style="color:rgba(255,255,255,.85)">WCAG 2.1 Reference</a> &nbsp;|&nbsp;
+  <a href="https://www.w3.org/WAI/ARIA/apg/" target="_blank" rel="noopener" style="color:rgba(255,255,255,.85)">ARIA Practices</a></p>
+</footer>
+
+<div class="notif" id="notif" role="status" aria-live="polite"></div>
+
+<script>
+// ── DARK MODE ──
+function toggleDark(){
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  document.documentElement.setAttribute('data-theme',d?'light':'dark');
+  document.getElementById('dark-btn').textContent=d?'🌙 Dark':'☀️ Light';
+  localStorage.setItem('a11y_theme',d?'light':'dark');
+}
+(()=>{const t=localStorage.getItem('a11y_theme');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');document.getElementById('dark-btn').textContent='☀️ Light';}})();
+
+// ── TOOL TABS ──
+function showTool(btn,id){
+  document.querySelectorAll('.tool-tab').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-selected','false');});
+  document.querySelectorAll('.tool-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');btn.setAttribute('aria-selected','true');
+  document.getElementById('tool-'+id).classList.add('active');
+  if(id==='history') renderHistory();
+}
+
+// ── NOTIFY ──
+function notify(msg,color='var(--pass)'){
+  const n=document.getElementById('notif');n.textContent=msg;n.style.background=color;
+  n.classList.add('show');setTimeout(()=>n.classList.remove('show'),2800);
+}
+
+// ── SAMPLE ──
+const SAMPLE=`<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <nav>
+    <a href="/">Home</a>
+    <a href="#">Click here</a>
+    <a href="#">Read more</a>
+    <a href="#">here</a>
+  </nav>
+  <h1>Welcome to Our Site</h1>
+  <h3>About Us</h3>
+  <h2>Our Services</h2>
+  <img src="banner.jpg">
+  <img src="logo.png" alt="">
+  <img src="team.jpg" alt="our team photo">
+  <video src="intro.mp4" autoplay></video>
+  <form>
+    <input type="text" placeholder="Your name">
+    <input type="email" id="email">
+    <input type="text" id="phone" aria-label="Phone number">
+    <button></button>
+    <button type="submit">Submit</button>
+  </form>
+  <table>
+    <tr><td>Name</td><td>Age</td></tr>
+    <tr><td>Alice</td><td>30</td></tr>
+  </table>
+  <iframe src="map.html"></iframe>
+  <div tabindex="3">Custom element</div>
+  <div onclick="doThing()">Clickable div</div>
+</body>
+</html>`;
+
+function loadSample(){document.getElementById('html-in').value=SAMPLE;}
+function hideResults(){document.getElementById('score-card').style.display='none';document.getElementById('results-wrap').style.display='none';}
+
+// ── WCAG CHECKS ──
+const CHECKS=[
+  {id:'lang',crit:'3.1.1',title:'Page Language Attribute',
+   desc:'The <html> element must have a valid lang attribute so screen readers pronounce content correctly.',
+   how:'Add lang="en" (or appropriate language code) to the <html> element.',
+   code:'<html lang="en">',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/language-of-page.html',
+   test(d){const h=d.querySelector('html');return!h?'info':h.getAttribute('lang')?.trim()?'pass':'fail';}},
+  {id:'title',crit:'2.4.2',title:'Page Title',
+   desc:'Every page needs a descriptive <title> to help users identify the page.',
+   how:'Add a meaningful <title> inside your <head>.',
+   code:'<title>Department Home | University of Florida</title>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/page-titled.html',
+   test(d){const t=d.querySelector('title');return t&&t.textContent.trim()?'pass':'fail';}},
+  {id:'viewport',crit:'1.4.4',title:'Viewport Meta — No Zoom Lock',
+   desc:'Never disable user scaling. It prevents users with low vision from zooming.',
+   how:'Use width=device-width, initial-scale=1.0 — never add user-scalable=no.',
+   code:'<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/resize-text.html',
+   test(d){const v=d.querySelector('meta[name="viewport"]');if(!v)return'warn';const c=v.getAttribute('content')||'';return(c.includes('user-scalable=no')||c.includes('maximum-scale=1'))?'fail':'pass';}},
+  {id:'alt',crit:'1.1.1',title:'Image Alt Text',
+   desc:'All informational images need descriptive alt text. Decorative images should use alt="".',
+   how:'Add alt="description" to every <img>. Use alt="" for decorative images.',
+   code:'<img src="photo.jpg" alt="Students studying in the library">\n<img src="divider.png" alt=""> <!-- decorative -->',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/non-text-content.html',
+   test(d){const imgs=d.querySelectorAll('img');if(!imgs.length)return'info';const missing=[...imgs].filter(i=>!i.hasAttribute('alt'));return missing.length?'fail':'pass';}},
+  {id:'h1',crit:'2.4.6',title:'Single H1 Element',
+   desc:'Each page should have exactly one H1 describing the main content.',
+   how:'Ensure your page has exactly one <h1> element as the main page title.',
+   code:'<h1>Department of Psychology</h1>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/headings-and-labels.html',
+   test(d){const h1=d.querySelectorAll('h1');if(!h1.length)return'fail';return h1.length>1?'warn':'pass';}},
+  {id:'heading-order',crit:'1.3.1',title:'Heading Hierarchy',
+   desc:'Headings must not skip levels. Going from H2 to H4 breaks the document outline for screen readers.',
+   how:'Use a logical heading hierarchy without skipping levels.',
+   code:'<h1>Title</h1>\n<h2>Section</h2>\n<h3>Subsection</h3>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+   test(d){const hs=d.querySelectorAll('h1,h2,h3,h4,h5,h6');if(!hs.length)return'info';const lv=[...hs].map(h=>+h.tagName[1]);for(let i=1;i<lv.length;i++)if(lv[i]-lv[i-1]>1)return'warn';return'pass';}},
+  {id:'links',crit:'2.4.4',title:'Descriptive Link Text',
+   desc:'Links must have meaningful text. "Click here", "here", "read more" are inaccessible without context.',
+   how:'Use descriptive text that makes sense out of context, or add aria-label.',
+   code:'<!-- Bad: -->\n<a href="#">Click here</a>\n<!-- Good: -->\n<a href="#">Download the Annual Report (PDF)</a>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/link-purpose-in-context.html',
+   test(d){const links=d.querySelectorAll('a');if(!links.length)return'info';const vague=['click here','read more','here','more','link','learn more','this','details'];const bad=[...links].filter(l=>vague.includes((l.textContent||'').trim().toLowerCase())&&!l.getAttribute('aria-label')&&!l.getAttribute('title'));return bad.length?'fail':'pass';}},
+  {id:'forms',crit:'1.3.1',title:'Form Input Labels',
+   desc:'Every form control needs a programmatically associated label for screen readers.',
+   how:'Use <label for="id"> or aria-label on each input.',
+   code:'<label for="email">Email</label>\n<input type="email" id="email" name="email">',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+   test(d){const ins=d.querySelectorAll('input:not([type=hidden]),select,textarea');if(!ins.length)return'info';const bad=[...ins].filter(i=>!d.querySelector(`label[for="${i.id}"]`)&&!i.getAttribute('aria-label')&&!i.getAttribute('aria-labelledby'));return bad.length?'fail':'pass';}},
+  {id:'placeholder',crit:'1.3.1',title:'Placeholder vs. Label',
+   desc:'Placeholder text disappears when typing and cannot replace a visible label.',
+   how:'Always use a <label> element in addition to placeholder attributes.',
+   code:'<label for="search">Search</label>\n<input id="search" placeholder="Enter search term…">',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+   test(d){const ins=d.querySelectorAll('input[placeholder]:not([type=hidden])');if(!ins.length)return'info';const noLabel=[...ins].filter(i=>!d.querySelector(`label[for="${i.id}"]`)&&!i.getAttribute('aria-label'));return noLabel.length?'warn':'pass';}},
+  {id:'buttons',crit:'4.1.2',title:'Button Accessible Names',
+   desc:'Every button must have an accessible name so screen readers can describe its purpose.',
+   how:'Use visible text inside buttons. For icon buttons, use aria-label.',
+   code:'<button aria-label="Close dialog">\n  <svg aria-hidden="true">…</svg>\n</button>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/name-role-value.html',
+   test(d){const btns=d.querySelectorAll('button,[role="button"]');if(!btns.length)return'info';const bad=[...btns].filter(b=>!(b.textContent||'').trim()&&!b.getAttribute('aria-label')&&!b.getAttribute('aria-labelledby')&&!b.querySelector('img[alt]'));return bad.length?'fail':'pass';}},
+  {id:'skiplink',crit:'2.4.1',title:'Skip Navigation Link',
+   desc:'A skip-to-content link lets keyboard users bypass repetitive navigation.',
+   how:'Add a visually-hidden skip link as the first element in <body>.',
+   code:'<a href="#main" class="skip-link">Skip to main content</a>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/bypass-blocks.html',
+   test(d){const links=d.querySelectorAll('a');const skip=[...links].find(l=>{const t=(l.textContent||'').toLowerCase();return t.includes('skip')&&(t.includes('main')||t.includes('content')||t.includes('nav'));});return skip?'pass':'warn';}},
+  {id:'tabindex',crit:'2.1.1',title:'No Positive tabindex',
+   desc:'tabindex > 0 disrupts the natural tab order and creates unpredictable keyboard navigation.',
+   how:'Only use tabindex="0" (to add to tab order) or tabindex="-1" (to remove from tab order).',
+   code:'<button tabindex="0">Accessible</button>\n<div tabindex="-1" id="modal">Modal</div>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/keyboard.html',
+   test(d){const els=d.querySelectorAll('[tabindex]');if(!els.length)return'info';return[...els].some(e=>parseInt(e.getAttribute('tabindex'))>0)?'warn':'pass';}},
+  {id:'tables',crit:'1.3.1',title:'Table Headers',
+   desc:'Data tables must use <th> elements with scope attributes so screen readers can associate cells with headers.',
+   how:'Use <th scope="col"> for column headers and <th scope="row"> for row headers.',
+   code:'<table>\n  <tr><th scope="col">Name</th><th scope="col">Age</th></tr>\n  <tr><td>Alice</td><td>30</td></tr>\n</table>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/info-and-relationships.html',
+   test(d){const tables=d.querySelectorAll('table');if(!tables.length)return'info';const noTh=[...tables].filter(t=>!t.querySelector('th'));return noTh.length?'fail':([...tables].some(t=>[...t.querySelectorAll('th')].some(th=>!th.getAttribute('scope')))?'warn':'pass');}},
+  {id:'iframes',crit:'4.1.2',title:'iFrame Titles',
+   desc:'iFrames must have a title attribute that describes their content for screen reader users.',
+   how:'Add a descriptive title attribute to every <iframe>.',
+   code:'<iframe src="map.html" title="Campus map"></iframe>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/name-role-value.html',
+   test(d){const iframes=d.querySelectorAll('iframe');if(!iframes.length)return'info';return[...iframes].some(f=>!f.getAttribute('title')?.trim())?'fail':'pass';}},
+  {id:'autoplay',crit:'1.4.2',title:'No Auto-playing Media',
+   desc:'Auto-playing audio or video can be disorienting and must have controls to pause.',
+   how:'Remove the autoplay attribute or provide a visible pause/stop mechanism.',
+   code:'<!-- Bad: -->\n<video src="intro.mp4" autoplay>\n<!-- Good: -->\n<video src="intro.mp4" controls>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/audio-control.html',
+   test(d){return d.querySelector('video[autoplay],audio[autoplay]')?'fail':'pass';}},
+  {id:'clickable-divs',crit:'4.1.2',title:'Interactive Elements Use Native Controls',
+   desc:'Using div/span with onclick instead of <button> or <a> breaks keyboard access and ARIA.',
+   how:'Replace clickable divs with <button> or <a> elements, or add role, tabindex, and keyboard handlers.',
+   code:'<!-- Bad: -->\n<div onclick="doThing()">Click me</div>\n<!-- Good: -->\n<button onclick="doThing()">Click me</button>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/name-role-value.html',
+   test(d){const els=d.querySelectorAll('div[onclick],span[onclick]');return els.length?'warn':'pass';}},
+  {id:'live-regions',crit:'4.1.3',title:'Status Messages Use Live Regions',
+   desc:'Dynamic status messages (form success, errors) must use aria-live so screen readers announce them.',
+   how:'Use role="status", role="alert", or aria-live on elements that receive dynamic content.',
+   code:'<div role="status" aria-live="polite">Form submitted successfully!</div>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/status-messages.html',
+   test(d){const forms=d.querySelectorAll('form');if(!forms.length)return'info';const live=d.querySelectorAll('[aria-live],[role="status"],[role="alert"]');return live.length?'pass':'warn';}},
+  {id:'lang-attr',crit:'3.1.2',title:'Language Changes Marked',
+   desc:'Passages in a different language should use the lang attribute on the containing element.',
+   how:'Add lang="fr" (or appropriate code) to any element containing foreign-language text.',
+   code:'<p>Visit <span lang="fr">Château Frontenac</span> in Quebec.</p>',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/language-of-parts.html',
+   test(){return'info';}},
+  {id:'meta-refresh',crit:'2.2.1',title:'No Automatic Refresh',
+   desc:'Using <meta http-equiv="refresh"> automatically redirects users, preventing them from finishing tasks.',
+   how:'Remove meta refresh tags. Use server-side redirects instead.',
+   code:'<!-- Remove this: -->\n<meta http-equiv="refresh" content="30">',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/timing-adjustable.html',
+   test(d){return d.querySelector('meta[http-equiv="refresh"]')?'fail':'pass';}},
+  {id:'focus',crit:'2.4.7',title:'Focus Indicator Style',
+   desc:'Keyboard focus indicators must be visible. Never use outline:none without providing an alternative.',
+   how:'Do not suppress :focus styles. Use outline or border to show focus clearly.',
+   code:'/* Bad: */\n:focus { outline: none; }\n\n/* Good: */\n:focus { outline: 3px solid #0021A5; outline-offset: 2px; }',
+   ref:'https://www.w3.org/WAI/WCAG21/Understanding/focus-visible.html',
+   test(d){const styles=d.querySelectorAll('style');const text=[...styles].map(s=>s.textContent).join('');return(text.includes('outline:none')||text.includes('outline: none'))?'warn':'pass';}},
+];
+
+let allResults=[];
+
+function runChecks(){
+  const raw=document.getElementById('html-in').value.trim();
+  if(!raw){alert('Please paste some HTML first!');return;}
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(raw,'text/html');
+  allResults=CHECKS.map(c=>{let sev;try{sev=c.test(doc);}catch(e){sev='info';}return{...c,sev};});
+  const counts={fail:0,warn:0,pass:0,info:0};
+  allResults.forEach(r=>counts[r.sev]++);
+  const total=allResults.length;
+  let score=100-(counts.fail*10)-(counts.warn*5);
+  score=Math.max(0,Math.min(100,score));
+  // Score UI
+  document.getElementById('score-card').style.display='block';
+  document.getElementById('score-num').textContent=score;
+  const ring=document.getElementById('score-ring');
+  ring.style.color=score>=80?'var(--pass)':score>=50?'var(--warn)':'var(--fail)';
+  ring.setAttribute('aria-label',`Score: ${score} out of 100`);
+  document.getElementById('cnt-fail').textContent=counts.fail;
+  document.getElementById('cnt-warn').textContent=counts.warn;
+  document.getElementById('cnt-pass').textContent=counts.pass;
+  document.getElementById('cnt-info').textContent=counts.info;
+  const pf=Math.round(counts.fail/total*100),pw=Math.round(counts.warn/total*100),pp=Math.round(counts.pass/total*100);
+  document.getElementById('pct-fail').textContent=pf+'%';
+  document.getElementById('pct-warn').textContent=pw+'%';
+  document.getElementById('pct-pass').textContent=pp+'%';
+  setTimeout(()=>{document.getElementById('bar-fail').style.width=pf+'%';document.getElementById('bar-warn').style.width=pw+'%';document.getElementById('bar-pass').style.width=pp+'%';},100);
+  // Results
+  document.getElementById('results-wrap').style.display='block';
+  document.querySelectorAll('.pill').forEach((b,i)=>{b.classList.toggle('active',i===0);b.setAttribute('aria-pressed',i===0?'true':'false');});
+  renderIssues(allResults);
+  // Save to history
+  saveHistory({score,counts,html:raw.substring(0,100)+'…',date:new Date().toLocaleString()});
+  document.getElementById('score-card').scrollIntoView({behavior:'smooth'});
+}
+
+function renderIssues(list){
+  const el=document.getElementById('issue-list');
+  const order={fail:0,warn:1,pass:2,info:3};
+  const sorted=[...list].sort((a,b)=>order[a.sev]-order[b.sev]);
+  if(!sorted.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--muted)">No issues for this filter.</div>';return;}
+  el.innerHTML=sorted.map((r,i)=>`
+    <div class="issue">
+      <div class="issue-hdr" onclick="toggleIssue(${i})" onkeydown="if(event.key==='Enter'||event.key===' ')toggleIssue(${i})"
+           tabindex="0" role="button" aria-expanded="false" id="ih-${i}" aria-controls="ib-${i}">
+        <span class="sev sev-${r.sev}">${r.sev.toUpperCase()}</span>
+        <span class="issue-title">${r.title}</span>
+        <span class="crit-tag">WCAG ${r.crit}</span>
+        <span class="exp-icon" aria-hidden="true">▼</span>
+      </div>
+      <div class="issue-body" id="ib-${i}" role="region" aria-labelledby="ih-${i}">
+        <p class="issue-desc">${r.desc}</p>
+        <div class="fix-box"><strong>How to Fix</strong><p>${r.how}</p></div>
+        <div class="code-block" role="region" aria-label="Code example">${esc(r.code)}</div>
+        <a class="ref-link" href="${r.ref}" target="_blank" rel="noopener">📖 WCAG ${r.crit} Reference →</a>
+      </div>
+    </div>`).join('');
+}
+
+function toggleIssue(i){
+  const b=document.getElementById(`ib-${i}`),h=document.getElementById(`ih-${i}`);
+  const open=b.classList.toggle('open');
+  h.setAttribute('aria-expanded',open);
+  h.querySelector('.exp-icon').textContent=open?'▲':'▼';
+}
+
+function filterIssues(btn,type){
+  document.querySelectorAll('.pill').forEach(p=>{p.classList.remove('active');p.setAttribute('aria-pressed','false');});
+  btn.classList.add('active');btn.setAttribute('aria-pressed','true');
+  renderIssues(type==='all'?allResults:allResults.filter(r=>r.sev===type));
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── EXPORT REPORT ──
+function exportReport(){
+  if(!allResults.length){alert('Run an audit first!');return;}
+  const score=document.getElementById('score-num').textContent;
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Accessibility Report</title>
+  <style>body{font-family:Arial,sans-serif;max-width:900px;margin:0 auto;padding:24px;color:#1a1a1a;}
+  h1{color:#0021A5;border-bottom:3px solid #FA4616;padding-bottom:8px;}
+  .score{font-size:3rem;font-weight:800;color:${parseInt(score)>=80?'#1a7f37':parseInt(score)>=50?'#9a6700':'#c0392b'};}
+  .issue{border:1px solid #dde4f0;border-radius:8px;margin-bottom:14px;overflow:hidden;}
+  .issue-hdr{display:flex;gap:10px;align-items:center;padding:12px 16px;background:#f4f7fb;}
+  .sev{padding:3px 10px;border-radius:12px;font-size:.75rem;font-weight:700;text-transform:uppercase;}
+  .sev-fail{background:#fdecea;color:#c0392b;}.sev-warn{background:#fff8e1;color:#9a6700;}.sev-pass{background:#e6f4ea;color:#1a7f37;}.sev-info{background:#dbeafe;color:#0550ae;}
+  .issue-body{padding:14px 16px;}.crit{font-size:.75rem;background:#eef1f9;color:#0021A5;padding:2px 8px;border-radius:10px;font-weight:600;}
+  pre{background:#1e1e2e;color:#cdd6f4;padding:12px;border-radius:6px;font-size:.8rem;overflow-x:auto;white-space:pre-wrap;}
+  </style></head><body>
+  <h1>Accessibility Audit Report</h1>
+  <p>Generated: ${new Date().toLocaleString()}</p>
+  <p>Score: <span class="score">${score}</span> / 100</p>
+  ${allResults.sort((a,b)=>({fail:0,warn:1,pass:2,info:3}[a.sev]-{fail:0,warn:1,pass:2,info:3}[b.sev])).map(r=>`
+  <div class="issue">
+    <div class="issue-hdr">
+      <span class="sev sev-${r.sev}">${r.sev.toUpperCase()}</span>
+      <strong>${r.title}</strong>
+      <span class="crit">WCAG ${r.crit}</span>
+    </div>
+    <div class="issue-body">
+      <p>${r.desc}</p>
+      <p><strong>Fix:</strong> ${r.how}</p>
+      <pre>${esc(r.code)}</pre>
+    </div>
+  </div>`).join('')}
+  </body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`accessibility-report-${Date.now()}.html`;a.click();
+  notify('Report exported!');
+}
+
+// ── COLOR CONTRAST ──
+function hexToRgb(hex){
+  hex=hex.replace(/^#/,'');
+  if(hex.length===3)hex=hex.split('').map(c=>c+c).join('');
+  if(hex.length!==6)return null;
+  const n=parseInt(hex,16);
+  return{r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+function linearize(c){c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);}
+function luminance(r,g,b){return 0.2126*linearize(r)+0.7152*linearize(g)+0.0722*linearize(b);}
+function contrastRatio(c1,c2){const l1=luminance(c1.r,c1.g,c1.b),l2=luminance(c2.r,c2.g,c2.b);const li=Math.max(l1,l2),ld=Math.min(l1,l2);return(li+0.05)/(ld+0.05);}
+
+function syncColor(type){
+  const hex=document.getElementById(type+'-hex').value;
+  if(/^#[0-9A-Fa-f]{6}$/.test(hex)){document.getElementById(type+'-color').value=hex;updatePreview();}
+}
+function syncFromPicker(type){
+  document.getElementById(type+'-hex').value=document.getElementById(type+'-color').value;
+  updatePreview();
+}
+function updatePreview(){
+  const fg=document.getElementById('fg-hex').value;const bg=document.getElementById('bg-hex').value;
+  const txt=document.getElementById('preview-text-in').value;const fs=document.getElementById('font-size-in').value;
+  if(/^#[0-9A-Fa-f]{6}$/.test(fg)&&/^#[0-9A-Fa-f]{6}$/.test(bg)){
+    document.getElementById('preview-box').style.background=bg;
+    document.getElementById('preview-normal').style.color=fg;
+    document.getElementById('preview-normal').style.fontSize=fs+'px';
+    document.getElementById('preview-normal').textContent=txt;
+    document.getElementById('preview-small').style.color=fg;
+    document.getElementById('preview-small').textContent='Small text: '+txt;
+  }
+}
+function calcContrast(){
+  const fg=hexToRgb(document.getElementById('fg-hex').value);
+  const bg=hexToRgb(document.getElementById('bg-hex').value);
+  if(!fg||!bg){alert('Please enter valid hex colors (#rrggbb).');return;}
+  const ratio=contrastRatio(fg,bg);
+  const fs=parseInt(document.getElementById('font-size-in').value);
+  const isLarge=fs>=18;
+  document.getElementById('ratio-display').textContent=ratio.toFixed(2)+':1';
+  function setCheck(id,pass,label){
+    const el=document.getElementById(id);
+    el.classList.toggle('pass-check',pass);el.classList.toggle('fail-check',!pass);
+    el.querySelector('.rc-result').textContent=pass?'✅ Pass':'❌ Fail';
+  }
+  setCheck('aa-normal',ratio>=4.5||isLarge&&ratio>=3);
+  setCheck('aa-large',ratio>=3);
+  setCheck('aaa-normal',ratio>=7||isLarge&&ratio>=4.5);
+  setCheck('aaa-large',ratio>=4.5);
+  document.getElementById('fg-detail').textContent=document.getElementById('fg-hex').value+` (R:${fg.r} G:${fg.g} B:${fg.b})`;
+  document.getElementById('bg-detail').textContent=document.getElementById('bg-hex').value+` (R:${bg.r} G:${bg.g} B:${bg.b})`;
+  document.getElementById('lum-detail').textContent=`FG: ${luminance(fg.r,fg.g,fg.b).toFixed(4)} | BG: ${luminance(bg.r,bg.g,bg.b).toFixed(4)}`;
+  updatePreview();
+  notify(`Contrast ratio: ${ratio.toFixed(2)}:1 — ${ratio>=4.5?'Passes':'Fails'} AA`,ratio>=4.5?'var(--pass)':'var(--fail)');
+}
+// Palette
+const PALETTE=[['#000000','#ffffff'],['#0021A5','#ffffff'],['#FA4616','#ffffff'],['#1a7f37','#ffffff'],['#c0392b','#ffffff'],['#0021A5','#f0f4ff'],['#000000','#ffff00'],['#333333','#f0f0f0']];
+document.getElementById('palette').innerHTML=PALETTE.map(([fg,bg])=>{
+  const fr=hexToRgb(fg),br=hexToRgb(bg);const ratio=fr&&br?contrastRatio(fr,br).toFixed(1):0;
+  return`<button onclick="document.getElementById('fg-hex').value='${fg}';document.getElementById('fg-color').value='${fg}';document.getElementById('bg-hex').value='${bg}';document.getElementById('bg-color').value='${bg}';calcContrast();"
+    style="background:${bg};color:${fg};border:2px solid #dde4f0;padding:7px 12px;border-radius:7px;cursor:pointer;font-size:.78rem;font-weight:700;"
+    aria-label="Apply ${fg} on ${bg}, ratio ${ratio}:1">${ratio}:1</button>`;
+}).join('');
+
+// ── HEADINGS ──
+function loadHeadingSample(){
+  document.getElementById('heading-html').value=`<html><body>
+  <h1>Main Page Title</h1>
+  <h2>About Our Department</h2>
+  <h3>Our Mission</h3>
+  <h3>Our History</h3>
+  <h4>Founded in 1965</h4>
+  <h2>Research Programs</h2>
+  <h4>Clinical Research</h4>
+  <h3>Cognitive Science</h3>
+  <h5>Lab Members</h5>
+  <h2>Contact</h2>
+</body></html>`;}
+function analyzeHeadings(){
+  const raw=(document.getElementById('heading-html')||document.getElementById('html-in')).value||document.getElementById('html-in').value;
+  if(!raw){alert('Paste HTML first!');return;}
+  const doc=new DOMParser().parseFromString(raw,'text/html');
+  const hs=[...doc.querySelectorAll('h1,h2,h3,h4,h5,h6')];
+  const res=document.getElementById('heading-results');
+  const tips=document.getElementById('heading-tips');
+  if(!hs.length){res.style.display='block';document.getElementById('htree').innerHTML='<p style="color:var(--muted)">No headings found in the HTML.</p>';document.getElementById('heading-summary').textContent='';tips.style.display='block';return;}
+  const h1count=hs.filter(h=>h.tagName==='H1').length;
+  let issues=[];
+  if(h1count===0) issues.push('❌ No H1 found — every page needs exactly one H1.');
+  if(h1count>1) issues.push(`⚠️ ${h1count} H1 elements found — use exactly one H1.`);
+  const levels=hs.map(h=>+h.tagName[1]);
+  let skipped=false;
+  for(let i=1;i<levels.length;i++) if(levels[i]-levels[i-1]>1){skipped=true;break;}
+  if(skipped) issues.push('⚠️ Heading levels are skipped (e.g., H2→H4). This breaks the document outline.');
+  document.getElementById('heading-summary').innerHTML=issues.length?issues.map(i=>`<div style="color:${i.startsWith('❌')?'var(--fail)':'var(--warn)'};margin-bottom:4px;">${i}</div>`).join(''):'<div style="color:var(--pass)">✅ Heading structure looks good!</div>';
+  let prevLevel=0;
+  document.getElementById('htree').innerHTML=hs.map((h,i)=>{
+    const level=+h.tagName[1];
+    const skip=i>0&&level-levels[i-1]>1;
+    prevLevel=level;
+    return`<div class="h-node h${level}-node${skip?' h-skip':''}" role="listitem">
+      <span class="h-level">H${level}</span>
+      <span>${h.textContent.trim()||'(empty heading)'}</span>
+      ${skip?`<span class="h-skip-warn">⚠️ Level skipped!</span>`:''}
+    </div>`;
+  }).join('');
+  res.style.display='block';tips.style.display='block';
+}
+
+// ── AUDIT HISTORY ──
+let history=JSON.parse(localStorage.getItem('a11y_history')||'[]');
+function saveHistory(entry){history.unshift(entry);history=history.slice(0,10);localStorage.setItem('a11y_history',JSON.stringify(history));}
+function renderHistory(){
+  const el=document.getElementById('hist-list');
+  if(!history.length){el.innerHTML='<p style="color:var(--muted);font-size:.88rem;">No audits yet. Run an audit to see history here.</p>';return;}
+  el.innerHTML=history.map((h,i)=>`
+    <div class="hist-item">
+      <div class="hist-score" style="color:${h.score>=80?'var(--pass)':h.score>=50?'var(--warn)':'var(--fail)'};">${h.score}</div>
+      <div class="hist-info">
+        <div class="hist-title">Audit #${history.length-i}</div>
+        <div class="hist-date">${h.date}</div>
+        <div class="hist-counts" style="color:var(--muted);">
+          <span style="color:var(--fail)">●${h.counts.fail} errors</span> &nbsp;
+          <span style="color:var(--warn)">●${h.counts.warn} warnings</span> &nbsp;
+          <span style="color:var(--pass)">●${h.counts.pass} passed</span>
+        </div>
+      </div>
+    </div>`).join('');
+}
+function clearHistory(){if(!confirm('Clear all audit history?'))return;history=[];localStorage.removeItem('a11y_history');renderHistory();notify('History cleared.','var(--warn)');}
+</script>
+</body>
+</html>
